@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  body {
+    @apply bg-stage text-beam font-body antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid #6c8aff;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+/* The literal spotlight beam — a cone of light falling from above.
+   This is the page's signature element. Pure CSS, no imagery. */
+.spotlight-beam {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  width: 140vw;
+  max-width: 1100px;
+  height: 900px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 50% 60% at 50% 0%,
+    rgba(61, 99, 245, 0.35) 0%,
+    rgba(61, 99, 245, 0.14) 35%,
+    rgba(9, 14, 34, 0) 70%
+  );
+  pointer-events: none;
+}
+
+.beam-cone {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 320px solid transparent;
+  border-right: 320px solid transparent;
+  border-top: 640px solid rgba(248, 250, 252, 0.035);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
