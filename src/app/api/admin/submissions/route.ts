@@ -1,23 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase";
 
+// Reads live, request-specific data (search/filter/sort query params) with
+// the service-role key. Must never be statically prerendered at build time.
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const supabase = getAdminClient();
   const params = req.nextUrl.searchParams;
 
   const search = params.get("search")?.trim();
   const department = params.get("department")?.trim();
+  const questionId = params.get("questionId")?.trim();
   const sort = params.get("sort") === "oldest" ? "oldest" : "newest";
   const onlyFeatured = params.get("featured") === "true";
   const includeHidden = params.get("includeHidden") === "true";
 
-  let query = supabase.from("submissions").select("*", { count: "exact" });
+  // Embed the parent question's title/slug so the dashboard can tag each
+  // guess with which question it answered, without an extra round trip.
+  let query = supabase
+    .from("submissions")
+    .select("*, question:questions(id,title,slug)", { count: "exact" });
 
   if (!includeHidden) {
     query = query.eq("status", "visible");
   }
   if (department && department !== "all") {
     query = query.eq("department", department);
+  }
+  if (questionId && questionId !== "all") {
+    if (questionId === "none") {
+      query = query.is("question_id", null);
+    } else {
+      query = query.eq("question_id", questionId);
+    }
   }
   if (onlyFeatured) {
     query = query.eq("featured", true);
@@ -42,6 +58,11 @@ export async function GET(req: NextRequest) {
     .from("submissions")
     .select("department, created_at");
 
+  const { data: questionRows } = await supabase
+    .from("questions")
+    .select("id, title, slug")
+    .order("created_at", { ascending: false });
+
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
@@ -59,5 +80,6 @@ export async function GET(req: NextRequest) {
       today: todayCount,
     },
     departmentList: Array.from(departments).sort(),
+    questionList: questionRows ?? [],
   });
 }

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase";
 
+// This route reads live data with the service-role key and is gated by the
+// admin session cookie — it must never be statically prerendered at build
+// time (which would run it with no request and no runtime env vars).
+export const dynamic = "force-dynamic";
+
 function toCsvValue(value: unknown): string {
   const str = String(value ?? "");
   if (/[",\n]/.test(str)) {

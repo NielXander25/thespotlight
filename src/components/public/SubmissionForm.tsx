@@ -7,7 +7,13 @@ const MESSAGE_MAX = 600;
 
 type Phase = "form" | "submitting" | "success" | "error";
 
-export function SubmissionForm() {
+export function SubmissionForm({
+  questionId,
+  revealLabel,
+}: {
+  questionId: string;
+  revealLabel: string;
+}) {
   const [phase, setPhase] = useState<Phase>("form");
   const [name, setName] = useState("");
   const [department, setDepartment] = useState("");
@@ -35,11 +41,17 @@ export function SubmissionForm() {
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, department, message, honeypot }),
+        body: JSON.stringify({ questionId, name, department, message, honeypot }),
       });
 
       if (res.status === 429) {
         setErrorMessage("You're guessing a little too fast — try again in a minute.");
+        setPhase("error");
+        return;
+      }
+      if (res.status === 403 || res.status === 404) {
+        const body = await res.json().catch(() => ({}));
+        setErrorMessage(body.error || "This guess isn't open anymore.");
         setPhase("error");
         return;
       }
@@ -69,7 +81,7 @@ export function SubmissionForm() {
           Your guess has been received.
         </h2>
         <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-mist">
-          Let&rsquo;s see if you&rsquo;re right on Monday. Keep an eye on The Spotlight.
+          Let&rsquo;s see if you&rsquo;re right on {revealLabel}. Keep an eye on The Spotlight.
         </p>
         <button
           onClick={() => {

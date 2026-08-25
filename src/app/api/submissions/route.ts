@@ -3,6 +3,8 @@ import { getAdminClient } from "@/lib/supabase";
 import { hashIp, isRateLimited } from "@/lib/rate-limit";
 import type { PublicSubmissionInput } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 const LIMITS = {
   name: { min: 2, max: 80 },
   department: { min: 2, max: 60 },
@@ -27,11 +29,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true }, { status: 201 });
   }
 
+  const questionId = clean(body.questionId);
   const name = clean(body.name);
   const department = clean(body.department);
   const message = clean(body.message);
 
   const errors: Record<string, string> = {};
+  if (!questionId) {
+    return NextResponse.json(
+      { error: "Missing question reference. Reload the page and try again." },
+      { status: 400 }
+    );
+  }
   if (name.length < LIMITS.name.min || name.length > LIMITS.name.max) {
     errors.name = `Name should be ${LIMITS.name.min}-${LIMITS.name.max} characters.`;
   }
@@ -59,7 +68,27 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getAdminClient();
+
+  // Confirm the question exists and is still open — never trust the client
+  // to only submit against valid/active questions.
+  const { data: question, error: questionError } = await supabase
+    .from("questions")
+    .select("id, is_active")
+    .eq("id", questionId)
+    .single();
+
+  if (questionError || !question) {
+    return NextResponse.json({ error: "This link is no longer valid." }, { status: 404 });
+  }
+  if (!question.is_active) {
+    return NextResponse.json(
+      { error: "This guess isn't accepting responses anymore." },
+      { status: 403 }
+    );
+  }
+
   const { error } = await supabase.from("submissions").insert({
+    question_id: questionId,
     name,
     department,
     message,

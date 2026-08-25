@@ -50,6 +50,9 @@ export function SubmissionCard({
             {submission.name}
           </p>
           <p className="text-xs text-mist">{submission.department}</p>
+          <p className="mt-1 truncate text-[11px] text-brand-light/80">
+            {submission.question?.title ?? "Uncategorized"}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {submission.featured && (

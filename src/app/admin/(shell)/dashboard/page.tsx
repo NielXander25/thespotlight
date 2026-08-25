@@ -8,13 +8,18 @@ import { SubmissionCard } from "@/components/admin/SubmissionCard";
 
 export default function DashboardPage() {
   const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
+  const fetchQuestions = useAdminStore((s) => s.fetchQuestions);
   const submissions = useAdminStore((s) => s.submissions);
   const stats = useAdminStore((s) => s.stats);
+  const questions = useAdminStore((s) => s.questions);
   const loading = useAdminStore((s) => s.loading);
 
   useEffect(() => {
     fetchSubmissions();
-  }, [fetchSubmissions]);
+    fetchQuestions();
+  }, [fetchSubmissions, fetchQuestions]);
+
+  const activeQuestions = questions.filter((q) => q.is_active).length;
 
   const recent = submissions.slice(0, 6);
 
@@ -29,10 +34,18 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total guesses" value={stats.total} />
         <StatCard label="Departments" value={stats.departments} />
         <StatCard label="Today" value={stats.today} />
+        <StatCard label="Active questions" value={activeQuestions} />
+      </div>
+
+      <div className="mt-6 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-5 py-3">
+        <p className="text-sm text-mist">Need a new link for the next round?</p>
+        <Link href="/admin/questions" className="text-sm font-medium text-brand-light">
+          Manage questions →
+        </Link>
       </div>
 
       <div className="mt-10 flex items-center justify-between">

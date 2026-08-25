@@ -2,10 +2,42 @@
 
 A two-sided app for AFIT's "The Spotlight" media platform:
 
-1. **Public page (`/`)** — students submit a guess for who's being featured Monday.
-2. **Admin dashboard (`/admin`)** — password-protected, view/search/filter guesses,
-   mark them featured, and build a screenshot-ready "guesses are in" graphic to
-   repost to the WhatsApp Channel.
+1. **Public pages (`/your-question-slug`)** — each guessing round ("question")
+   gets its own link. Students who open it submit a guess; every submission
+   is tagged with exactly which question it answered.
+2. **Admin dashboard (`/admin`)** — password-protected. Create questions and
+   copy their links, view/search/filter guesses (by question, department, or
+   text), mark them featured, and build a screenshot-ready "guesses are in"
+   graphic to repost to the WhatsApp Channel.
+
+## How question links work
+
+- Go to **Admin → Questions → New question**, give it a headline (e.g. "Who's
+  in the Spotlight — Week 3?"), optional supporting text, and a reveal label
+  (e.g. "Friday"). A slug is generated from the title — editable before you
+  create it, e.g. `thespotlight.ng/whos-in-the-spotlight-wk3`.
+- Copy that link and share it. Everyone who opens it sees that question's own
+  headline and submits against that question's ID — nothing is inferred from
+  timing or guesswork, the link *is* the question.
+- Close a question (`Close guessing`) once its Monday reveal happens; its
+  link then shows a "this guess is closed" state instead of the form. You can
+  reopen it any time.
+- The bare domain (`/`) isn't meant to be shared — if there's exactly one
+  active question it redirects there for convenience; otherwise it shows a
+  neutral "check the link you were sent" page. It never lists questions
+  publicly.
+- Deleting a question does **not** delete the guesses that answered it — they
+  become "Uncategorized" in All Guesses (see `ON DELETE SET NULL` in the
+  schema).
+
+## Planned next: accounts
+
+You mentioned wanting users to create accounts eventually. To make that a
+plain migration instead of a rewrite, `submissions.user_id` already exists in
+the schema (nullable, unenforced, unused by any code yet). When you're ready:
+Supabase Auth is the natural fit given the rest of the stack — add a sign-in
+flow, set `user_id` on insert for logged-in users, and optionally require it
+going forward. Nothing above needs to change structurally for that to slot in.
 
 ## Stack & why
 
@@ -30,8 +62,11 @@ A two-sided app for AFIT's "The Spotlight" media platform:
 ### 1. Create the Supabase project & table
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run everything in `supabase/schema.sql`. This
-   creates the `submissions` table and its Row Level Security policies.
+2. Open **SQL Editor**:
+   - **New project, no data yet:** run everything in `supabase/schema.sql`.
+   - **Already have a `submissions` table from before question links
+     existed:** run `supabase/migrations/002_add_questions.sql` instead —
+     it only adds what's missing and won't touch your existing rows.
 3. From **Project Settings → API**, copy the Project URL, `anon` key, and
    `service_role` key.
 
@@ -61,10 +96,22 @@ npm run dev
 ### 4. Deploy
 
 Any Node host works (Vercel is the path of least resistance for Next.js).
-Set the same environment variables in your host's dashboard. On Vercel,
-remember the in-memory rate limiter (`src/lib/rate-limit.ts`) resets per
-serverless instance — fine for launch traffic, but swap it for a Redis-backed
-limiter (e.g. Upstash) if you see spam at scale.
+Set the same environment variables in your host's dashboard — on Vercel,
+add them under **Settings → Environment Variables** for the Production
+environment (and Preview, if you want previews to work against the same
+Supabase project).
+
+Every route that reads or writes data (`/`, `/[slug]`, and everything under
+`/api/admin`) is explicitly marked `export const dynamic = "force-dynamic"`.
+This matters: without it, Next.js tries to prerender those routes at *build*
+time, before your environment variables are guaranteed to be present, which
+fails the build with a `SUPABASE_SERVICE_ROLE_KEY is not set` error. If you
+ever add a new route that reads Supabase or checks the session cookie, add
+that same line at the top of the file.
+
+On Vercel, remember the in-memory rate limiter (`src/lib/rate-limit.ts`)
+resets per serverless instance — fine for launch traffic, but swap it for a
+Redis-backed limiter (e.g. Upstash) if you see spam at scale.
 
 ## How the "identity stays hidden" rule is enforced
 
@@ -83,12 +130,16 @@ limiter (e.g. Upstash) if you see spam at scale.
 ```
 src/
   app/
-    page.tsx                    Public submission page
-    api/submissions/route.ts    Public POST endpoint (insert-only)
+    page.tsx                    Root: redirects to the one active question,
+                                 or shows a neutral fallback
+    [slug]/page.tsx             Public per-question page (the shared link)
+    api/submissions/route.ts    Public POST endpoint (insert-only, validates
+                                 the question exists & is active)
     admin/
       login/page.tsx            Admin login (outside auth + outside sidebar)
       (shell)/                  Route group: pages wrapped in the sidebar shell
         dashboard/page.tsx
+        questions/page.tsx       Create questions, copy links, open/close them
         guesses/page.tsx
         featured/page.tsx
         settings/page.tsx
@@ -97,21 +148,28 @@ src/
                                  so the poster area stays screenshot-clean
     api/admin/
       login/route.ts  logout/route.ts
-      submissions/route.ts        GET list (search/filter/sort/stats)
+      questions/route.ts          GET list (with guess counts) + POST create
+      questions/[id]/route.ts     PATCH (title/subtext/active/slug) + DELETE
+      submissions/route.ts        GET list (search/filter by question or
+                                   department/sort/stats)
       submissions/[id]/route.ts   PATCH (feature/hide/reveal) + DELETE
       export/route.ts             CSV export
   components/
-    public/     SpotlightBeam, SubmissionForm
-    admin/      Sidebar, StatCard, SubmissionCard, Filters, ShareCard
+    public/     SpotlightBeam, QuestionExperience, SubmissionForm, ClosedState
+    admin/      Sidebar, StatCard, SubmissionCard, Filters, ShareCard,
+                QuestionCard, NewQuestionForm
     ui/         TextInput, TextArea, FieldWrapper
   lib/
     supabase.ts   anon client (public) + service-role client (admin only)
     auth.ts       session token sign/verify
     rate-limit.ts in-memory throttle + IP hashing
+    slug.ts       slug generation for question links
     store.ts      Zustand store for the admin dashboard
     types.ts      Shared types
   middleware.ts   Protects /admin/* and /api/admin/*
-supabase/schema.sql
+supabase/
+  schema.sql                 Fresh-install schema (questions + submissions)
+  migrations/002_add_questions.sql   For upgrading an existing install
 ```
 
 ## Using the Share View

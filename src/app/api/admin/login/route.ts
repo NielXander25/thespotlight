@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSessionToken, SESSION_COOKIE, SESSION_COOKIE_MAX_AGE } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // Basic brute-force throttle for the login route itself.
 const attempts = new Map<string, number[]>();
 const WINDOW_MS = 60_000;

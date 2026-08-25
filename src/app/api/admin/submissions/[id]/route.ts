@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 const ALLOWED_FIELDS = ["status", "featured", "identity_revealed"] as const;
 type AllowedField = (typeof ALLOWED_FIELDS)[number];
 
