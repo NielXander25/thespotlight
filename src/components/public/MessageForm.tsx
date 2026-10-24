@@ -173,7 +173,7 @@ export function MessageForm({
 
       <p className="mt-4 text-center text-xs leading-relaxed text-mist/60">
         {isFounder
-          ? "Only the founder and The Spotlight team can read this."
+          ? "Only the founder can read this."
           : "We don't collect your name, account, or IP address with this message."}{" "}
         Messages are kept for {MESSAGE_RETENTION_DAYS} days, then permanently deleted.
       </p>

@@ -1,53 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
-
-const ALLOWED_FIELDS = ["status", "featured", "identity_revealed"] as const;
-type AllowedField = (typeof ALLOWED_FIELDS)[number];
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const body = await req.json().catch(() => ({}));
-  const update: Partial<Record<AllowedField, unknown>> = {};
 
-  for (const field of ALLOWED_FIELDS) {
-    if (field in body) update[field] = body[field];
-  }
+  const status = "status" in body ? body.status : null;
+  const featured = typeof body.featured === "boolean" ? body.featured : null;
+  const identityRevealed = typeof body.identity_revealed === "boolean" ? body.identity_revealed : null;
 
-  if (Object.keys(update).length === 0) {
+  if (status === null && featured === null && identityRevealed === null) {
     return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
   }
-  if ("status" in update && !["visible", "hidden"].includes(update.status as string)) {
+  if (status !== null && !["visible", "hidden"].includes(status)) {
     return NextResponse.json({ error: "Invalid status value." }, { status: 400 });
   }
 
-  const supabase = getAdminClient();
-  const { data, error } = await supabase
-    .from("submissions")
-    .update(update)
-    .eq("id", params.id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    // coalesce keeps any field that wasn't sent.
+    const [submission] = await getSql()`
+      update submissions set
+        status = coalesce(${status}, status),
+        featured = coalesce(${featured}, featured),
+        identity_revealed = coalesce(${identityRevealed}, identity_revealed)
+      where id::text = ${params.id}
+      returning *
+    `;
+    if (!submission) {
+      return NextResponse.json({ error: "Submission not found." }, { status: 404 });
+    }
+    return NextResponse.json({ submission });
+  } catch (error) {
     console.error("update submission failed", error);
     return NextResponse.json({ error: "Failed to update submission." }, { status: 500 });
   }
-
-  return NextResponse.json({ submission: data });
 }
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = getAdminClient();
-  const { error } = await supabase.from("submissions").delete().eq("id", params.id);
-
-  if (error) {
+  try {
+    await getSql()`delete from submissions where id::text = ${params.id}`;
+  } catch (error) {
     console.error("delete submission failed", error);
     return NextResponse.json({ error: "Failed to delete submission." }, { status: 500 });
   }

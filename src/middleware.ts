@@ -18,9 +18,9 @@ export async function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  const authed = await verifySessionToken(token);
+  const account = await verifySessionToken(token);
 
-  if (!authed) {
+  if (!account) {
     if (pathname.startsWith("/api/admin")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

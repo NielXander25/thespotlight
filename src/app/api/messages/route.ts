@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql } from "@/lib/db";
 import { hashIp, isRateLimited } from "@/lib/rate-limit";
 import { MESSAGE_LIMITS, MESSAGE_RETENTION_DAYS } from "@/lib/messages";
 import type { MessageChannel, PublicMessageInput } from "@/lib/types";
@@ -63,20 +63,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = getAdminClient();
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + MESSAGE_RETENTION_DAYS * 86_400_000);
 
-  const { error } = await supabase.from("messages").insert({
-    channel,
-    body: text,
-    sender_name: senderName || null,
-    sender_contact: senderContact || null,
-    created_at: createdAt.toISOString(),
-    expires_at: expiresAt.toISOString(),
-  });
-
-  if (error) {
+  try {
+    await getSql()`
+      insert into messages (channel, body, sender_name, sender_contact, created_at, expires_at)
+      values (${channel}, ${text}, ${senderName || null}, ${senderContact || null},
+              ${createdAt.toISOString()}, ${expiresAt.toISOString()})
+    `;
+  } catch (error) {
     console.error("message insert failed", error);
     return NextResponse.json(
       { error: "Something went wrong on our end. Please try again." },

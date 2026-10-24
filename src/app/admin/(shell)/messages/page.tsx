@@ -110,6 +110,7 @@ function MessageCard({
 
 export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isFounder, setIsFounder] = useState(false);
   const [filter, setFilter] = useState<ChannelFilter>("all");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -122,6 +123,7 @@ export default function MessagesPage() {
       if (!res.ok) throw new Error("failed to fetch messages");
       const body = await res.json();
       setMessages(body.messages);
+      setIsFounder(body.account === "founder");
     } catch {
       setLoadError(true);
     } finally {
@@ -161,15 +163,16 @@ export default function MessagesPage() {
       <p className="mt-1 max-w-2xl text-sm text-mist">
         Every message stays here for {MESSAGE_RETENTION_DAYS} days from when it was sent,
         then is permanently deleted. Deleting one yourself removes it immediately.
+        {!isFounder && " Talk to the Founder messages are only visible when signed in as the founder."}
       </p>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Messages" value={messages.length} />
         <StatCard label="Unread" value={unread} />
-        <StatCard label="To the founder" value={founderCount} />
+        <StatCard label="To the founder" value={isFounder ? founderCount : "—"} />
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className={`mt-6 flex-wrap gap-2 ${isFounder ? "flex" : "hidden"}`}>
         {FILTERS.map((f) => (
           <button
             key={f.value}

@@ -1,37 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql, isUniqueViolation } from "@/lib/db";
 import { isReservedSlug, slugify, withRandomSuffix } from "@/lib/slug";
 import type { QuestionInput } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const supabase = getAdminClient();
-
-  const { data: questions, error } = await supabase
-    .from("questions")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
+  try {
+    // Guess counts come from one grouped join rather than N queries.
+    const questions = await getSql()`
+      select q.*, count(s.id)::int as guess_count
+      from questions q
+      left join submissions s on s.question_id = q.id
+      group by q.id
+      order by q.created_at desc
+    `;
+    return NextResponse.json({ questions });
+  } catch (error) {
     console.error("list questions failed", error);
     return NextResponse.json({ error: "Failed to load questions." }, { status: 500 });
   }
-
-  // Tally guess counts per question in one pass rather than N queries.
-  const { data: allSubmissions } = await supabase.from("submissions").select("question_id");
-  const counts = new Map<string, number>();
-  for (const row of allSubmissions ?? []) {
-    if (!row.question_id) continue;
-    counts.set(row.question_id, (counts.get(row.question_id) ?? 0) + 1);
-  }
-
-  const withCounts = (questions ?? []).map((q) => ({
-    ...q,
-    guess_count: counts.get(q.id) ?? 0,
-  }));
-
-  return NextResponse.json({ questions: withCounts });
 }
 
 export async function POST(req: NextRequest) {
@@ -57,32 +45,27 @@ export async function POST(req: NextRequest) {
     baseSlug = withRandomSuffix(baseSlug);
   }
 
-  const supabase = getAdminClient();
+  const sql = getSql();
 
   // Try the clean slug first, then fall back to a suffixed version on
   // collision (Postgres unique_violation = 23505), a few times.
   let slug = baseSlug;
   for (let attempt = 0; attempt < 5; attempt++) {
-    const { data, error } = await supabase
-      .from("questions")
-      .insert({
-        slug,
-        title,
-        subtext: subtext || null,
-        reveal_label: revealLabel || "Monday",
-      })
-      .select()
-      .single();
-
-    if (!error) {
-      return NextResponse.json({ question: { ...data, guess_count: 0 } }, { status: 201 });
+    try {
+      const [question] = await sql`
+        insert into questions (slug, title, subtext, reveal_label)
+        values (${slug}, ${title}, ${subtext || null}, ${revealLabel || "Monday"})
+        returning *
+      `;
+      return NextResponse.json({ question: { ...question, guess_count: 0 } }, { status: 201 });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        slug = withRandomSuffix(baseSlug);
+        continue;
+      }
+      console.error("create question failed", error);
+      return NextResponse.json({ error: "Failed to create question." }, { status: 500 });
     }
-    if (error.code === "23505") {
-      slug = withRandomSuffix(baseSlug);
-      continue;
-    }
-    console.error("create question failed", error);
-    return NextResponse.json({ error: "Failed to create question." }, { status: 500 });
   }
 
   return NextResponse.json(

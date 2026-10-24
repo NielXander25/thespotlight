@@ -1,20 +1,17 @@
-import { getAdminClient } from "@/lib/supabase";
+import { getSql } from "@/lib/db";
 import { QuestionExperience } from "@/components/public/QuestionExperience";
 import { ClosedState } from "@/components/public/ClosedState";
 import type { Question } from "@/lib/types";
 
-// Rendered per-request via the service role key (server-side only) — never
-// prerendered at build time, and the public never gets a direct read path
-// to the questions table (see supabase/schema.sql).
+// Rendered per-request on the server — never prerendered at build time, and
+// the public never gets a direct read path to the questions table.
 export const dynamic = "force-dynamic";
 
 export default async function QuestionPage({ params }: { params: { slug: string } }) {
-  const supabase = getAdminClient();
-  const { data: question } = await supabase
-    .from("questions")
-    .select("*")
-    .eq("slug", params.slug)
-    .single<Question>();
+  const sql = getSql();
+  const [question] = (await sql`
+    select * from questions where slug = ${params.slug}
+  `) as Question[];
 
   if (!question) {
     return (

@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
+    "@neondatabase/serverless": "^1.2.0",
     "html-to-image": "^1.11.11",
     "jose": "^5.9.6",
     "next": "14.2.35",

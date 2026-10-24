@@ -7,6 +7,7 @@ import { TextInput } from "@/components/ui/Field";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const [account, setAccount] = useState<"admin" | "founder">("admin");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ function LoginForm() {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ account, password }),
     });
 
     setLoading(false);
@@ -46,9 +47,23 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface/60 p-1">
+            {(["admin", "founder"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setAccount(option)}
+                className={`rounded-lg py-2 text-sm font-medium ${
+                  account === option ? "bg-brand/20 text-brand-light" : "text-mist hover:text-beam"
+                }`}
+              >
+                {option === "admin" ? "Team admin" : "Founder"}
+              </button>
+            ))}
+          </div>
           <TextInput
             type="password"
-            placeholder="Admin password"
+            placeholder={account === "founder" ? "Founder password" : "Admin password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoFocus

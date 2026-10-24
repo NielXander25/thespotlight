@@ -14,7 +14,11 @@ The public site and admin tools for AFIT's "The Spotlight" media platform:
   never stored with the message.
 - **Admin → Messages** — inbox for both. **Every message is kept for 30 days**
   from when it was sent, then purged; the admin deleting it is the only way
-  it leaves sooner. Requires `supabase/migrations/003_add_messages.sql`.
+  it leaves sooner.
+- **Two dashboard accounts** — *Team admin* (`ADMIN_PASSWORD`) and *Founder*
+  (`FOUNDER_PASSWORD`), picked on the login screen. Talk to the Founder
+  messages are visible to the founder account only; everything else is
+  shared.
 
 Brand: the text mark (`src/components/brand/Wordmark.tsx`) is the primary
 signature. The logo mark (`public/brand/logo-mark.png`) is used sparingly —
@@ -53,7 +57,7 @@ The guessing game:
 You mentioned wanting users to create accounts eventually. To make that a
 plain migration instead of a rewrite, `submissions.user_id` already exists in
 the schema (nullable, unenforced, unused by any code yet). When you're ready:
-Supabase Auth is the natural fit given the rest of the stack — add a sign-in
+Neon Auth (or Auth.js) is the natural fit given the rest of the stack — add a sign-in
 flow, set `user_id` on insert for logged-in users, and optionally require it
 going forward. Nothing above needs to change structurally for that to slot in.
 
@@ -61,15 +65,15 @@ going forward. Nothing above needs to change structurally for that to slot in.
 
 - **Next.js 14 (App Router) + TypeScript + Tailwind** — matches your existing
   frontend stack, one codebase for public site + admin + API.
-- **Supabase (Postgres)** — production-suitable managed Postgres with Row Level
-  Security. The public page uses the anon key and can only INSERT rows (never
-  read them back), so there's no way for the public frontend to leak names,
-  departments, or messages. All admin reads/writes go through server-side API
-  routes using the service role key, gated by the session cookie.
-- **Signed cookie session (`jose`)** — a single admin password (env var) issues
-  an HTTP-only, signed JWT cookie checked by `src/middleware.ts` on every
-  `/admin/*` and `/api/admin/*` request. No user table needed for a single
-  admin; swap in Supabase Auth later if you want multiple admin accounts.
+- **Neon (serverless Postgres)** via `@neondatabase/serverless`. The database
+  is only ever reached from server code using `DATABASE_URL`; the browser has
+  no database credentials or direct read path, so names, departments, and
+  messages can't leak through a public request. All queries bind user input
+  as parameters.
+- **Signed cookie session (`jose`)** — one password per account (env vars)
+  issues an HTTP-only, signed JWT cookie, carrying which account signed in,
+  checked by `src/middleware.ts` on every `/admin/*` and `/api/admin/*`
+  request.
 - **Zustand** — client-side store for the admin dashboard (filters, submission
   list, Share View selection) — matches your existing stack.
 - **html-to-image** — lets the admin download the Share View poster as a PNG
@@ -77,32 +81,24 @@ going forward. Nothing above needs to change structurally for that to slot in.
 
 ## Getting started
 
-### 1. Create the Supabase project & table
+### 1. Create the database
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor**:
-   - **New project, no data yet:** run everything in `supabase/schema.sql`.
-   - **Already have a `submissions` table from before question links
-     existed:** run `supabase/migrations/002_add_questions.sql` instead —
-     it only adds what's missing and won't touch your existing rows.
-   - **Existing install without messages:** run
-     `supabase/migrations/003_add_messages.sql`. Optionally schedule the
-     pg_cron purge at the bottom of that file; expiry also runs every time
-     the admin inbox loads, so it works without it.
-3. From **Project Settings → API**, copy the Project URL, `anon` key, and
-   `service_role` key.
+The production database is the Neon project **The Spotlight**
+(console.neon.tech → organization "Jathniel"), and `db/schema.sql` has
+already been applied to it. For a fresh database, open Neon's **SQL Editor**
+and run everything in `db/schema.sql` — it's safe to run more than once.
+Expired messages are purged every time the admin inbox loads, so no
+scheduler is needed.
 
 ### 2. Configure environment variables
 
 Copy `.env.example` to `.env.local` and fill in:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...      # server-only, never exposed to the browser
-ADMIN_PASSWORD=...                 # the dashboard login password
-SESSION_SECRET=...                 # any long random string (e.g. `openssl rand -hex 32`)
-NEXT_PUBLIC_REVEAL_LABEL=Monday    # shown on the public page, e.g. "this Friday"
+DATABASE_URL=...        # Neon → Connect → pooled connection string (server-only)
+ADMIN_PASSWORD=...      # Team admin login
+FOUNDER_PASSWORD=...    # Founder login (sees Talk to the Founder messages)
+SESSION_SECRET=...      # any long random string (e.g. `openssl rand -hex 32`)
 ```
 
 ### 3. Install and run
@@ -121,14 +117,14 @@ Any Node host works (Vercel is the path of least resistance for Next.js).
 Set the same environment variables in your host's dashboard — on Vercel,
 add them under **Settings → Environment Variables** for the Production
 environment (and Preview, if you want previews to work against the same
-Supabase project).
+database — or point Preview at a Neon branch).
 
 Every route that reads or writes data (`/`, `/[slug]`, and everything under
 `/api/admin`) is explicitly marked `export const dynamic = "force-dynamic"`.
 This matters: without it, Next.js tries to prerender those routes at *build*
 time, before your environment variables are guaranteed to be present, which
-fails the build with a `SUPABASE_SERVICE_ROLE_KEY is not set` error. If you
-ever add a new route that reads Supabase or checks the session cookie, add
+fails the build with a `DATABASE_URL is not set` error. If you ever add a
+new route that reads the database or checks the session cookie, add
 that same line at the top of the file.
 
 On Vercel, remember the in-memory rate limiter (`src/lib/rate-limit.ts`)
@@ -139,9 +135,10 @@ Redis-backed limiter (e.g. Upstash) if you see spam at scale.
 
 - The public submission form always sends `name` + `department`, and they're
   always stored — the admin needs them.
-- The public site **never has a read path** to the `submissions` table (no
-  RLS `SELECT` policy for `anon`), so there is no public page or public API
-  response that could ever include a name.
+- The public site **never has a read path** to the `submissions` table (the
+  database is only reachable from server code, and no public route returns
+  submissions), so there is no public page or public API response that could
+  ever include a name.
 - Every submission has an `identity_revealed` boolean, defaulting to `false`.
   It only flips to `true` when the admin explicitly toggles "Reveal identity
   on poster" for that submission in Share View — and it only affects what's
@@ -182,16 +179,16 @@ src/
                 QuestionCard, NewQuestionForm
     ui/         TextInput, TextArea, FieldWrapper
   lib/
-    supabase.ts   anon client (public) + service-role client (admin only)
-    auth.ts       session token sign/verify
+    db.ts         server-only Neon Postgres client
+    auth.ts       accounts + session token sign/verify
+    session.ts    reads the signed-in account in API routes
     rate-limit.ts in-memory throttle + IP hashing
     slug.ts       slug generation for question links
     store.ts      Zustand store for the admin dashboard
     types.ts      Shared types
   middleware.ts   Protects /admin/* and /api/admin/*
-supabase/
-  schema.sql                 Fresh-install schema (questions + submissions)
-  migrations/002_add_questions.sql   For upgrading an existing install
+db/
+  schema.sql    Full schema (questions, submissions, messages), idempotent
 ```
 
 ## Using the Share View

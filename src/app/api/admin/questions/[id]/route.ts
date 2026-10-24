@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql, isUniqueViolation } from "@/lib/db";
 import { isReservedSlug, slugify } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
@@ -44,37 +44,50 @@ export async function PATCH(
     return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
   }
 
-  const supabase = getAdminClient();
-  const { data, error } = await supabase
-    .from("questions")
-    .update(update)
-    .eq("id", params.id)
-    .select()
-    .single();
+  if ("is_active" in update && typeof update.is_active !== "boolean") {
+    return NextResponse.json({ error: "Invalid active value." }, { status: 400 });
+  }
+  if ("reveal_label" in update) {
+    const revealLabel = String(update.reveal_label ?? "").trim();
+    if (!revealLabel || revealLabel.length > 40) {
+      return NextResponse.json({ error: "Reveal label should be 1-40 characters." }, { status: 422 });
+    }
+    update.reveal_label = revealLabel;
+  }
 
-  if (error) {
-    if (error.code === "23505") {
+  // Column names come only from ALLOWED_FIELDS; values are bound parameters.
+  const fields = Object.keys(update) as AllowedField[];
+  const assignments = fields.map((field, i) => `${field} = $${i + 1}`).join(", ");
+  const values = [...fields.map((field) => update[field]), params.id];
+
+  try {
+    const [question] = await getSql().query(
+      `update questions set ${assignments} where id::text = $${values.length} returning *`,
+      values
+    );
+    if (!question) {
+      return NextResponse.json({ error: "Question not found." }, { status: 404 });
+    }
+    return NextResponse.json({ question });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
       return NextResponse.json({ error: "That link is already in use." }, { status: 409 });
     }
     console.error("update question failed", error);
     return NextResponse.json({ error: "Failed to update question." }, { status: 500 });
   }
-
-  return NextResponse.json({ question: data });
 }
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = getAdminClient();
-
   // Guesses that already answered this question are kept — question_id just
   // becomes null on them (see schema's ON DELETE SET NULL) — deleting a
   // question never deletes anyone's guess.
-  const { error } = await supabase.from("questions").delete().eq("id", params.id);
-
-  if (error) {
+  try {
+    await getSql()`delete from questions where id::text = ${params.id}`;
+  } catch (error) {
     console.error("delete question failed", error);
     return NextResponse.json({ error: "Failed to delete question." }, { status: 500 });
   }

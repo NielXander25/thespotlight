@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql } from "@/lib/db";
 import { hashIp, isRateLimited } from "@/lib/rate-limit";
 import type { PublicSubmissionInput } from "@/lib/types";
 
@@ -67,17 +67,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = getAdminClient();
+  const sql = getSql();
 
   // Confirm the question exists and is still open — never trust the client
-  // to only submit against valid/active questions.
-  const { data: question, error: questionError } = await supabase
-    .from("questions")
-    .select("id, is_active")
-    .eq("id", questionId)
-    .single();
+  // to only submit against valid/active questions. The uuid regex keeps a
+  // malformed id from becoming a database cast error.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(questionId);
+  const [question] = isUuid
+    ? ((await sql`select id, is_active from questions where id = ${questionId}`) as {
+        id: string;
+        is_active: boolean;
+      }[])
+    : [];
 
-  if (questionError || !question) {
+  if (!question) {
     return NextResponse.json({ error: "This link is no longer valid." }, { status: 404 });
   }
   if (!question.is_active) {
@@ -87,15 +90,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { error } = await supabase.from("submissions").insert({
-    question_id: questionId,
-    name,
-    department,
-    message,
-    ip_hash: ipHash,
-  });
-
-  if (error) {
+  try {
+    await sql`
+      insert into submissions (question_id, name, department, message, ip_hash)
+      values (${questionId}, ${name}, ${department}, ${message}, ${ipHash})
+    `;
+  } catch (error) {
     console.error("submission insert failed", error);
     return NextResponse.json(
       { error: "Something went wrong on our end. Please try again." },

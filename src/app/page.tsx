@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql } from "@/lib/db";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { TalkToFounderButton } from "@/components/site/TalkToFounderButton";
@@ -21,13 +21,11 @@ export const dynamic = "force-dynamic";
  */
 async function getLiveGuess(): Promise<{ slug: string; title: string } | null> {
   try {
-    const { data } = await getAdminClient()
-      .from("questions")
-      .select("slug, title")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(2);
-    return data && data.length === 1 ? data[0] : null;
+    const rows = (await getSql()`
+      select slug, title from questions
+      where is_active order by created_at desc limit 2
+    `) as { slug: string; title: string }[];
+    return rows.length === 1 ? rows[0] : null;
   } catch {
     // The homepage should still render if the database is unreachable.
     return null;

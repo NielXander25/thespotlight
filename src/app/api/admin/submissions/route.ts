@@ -1,85 +1,78 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/supabase";
+import { getSql } from "@/lib/db";
 
-// Reads live, request-specific data (search/filter/sort query params) with
-// the service-role key. Must never be statically prerendered at build time.
+// Reads live, request-specific data (search/filter/sort query params).
+// Must never be statically prerendered at build time.
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const supabase = getAdminClient();
+  const sql = getSql();
   const params = req.nextUrl.searchParams;
 
   const search = params.get("search")?.trim();
   const department = params.get("department")?.trim();
   const questionId = params.get("questionId")?.trim();
-  const sort = params.get("sort") === "oldest" ? "oldest" : "newest";
+  const sort = params.get("sort") === "oldest" ? "asc" : "desc";
   const onlyFeatured = params.get("featured") === "true";
   const includeHidden = params.get("includeHidden") === "true";
 
-  // Embed the parent question's title/slug so the dashboard can tag each
-  // guess with which question it answered, without an extra round trip.
-  let query = supabase
-    .from("submissions")
-    .select("*, question:questions(id,title,slug)", { count: "exact" });
+  // Filters are built as parameterized clauses — user input is only ever
+  // passed as a bound value, never spliced into the SQL text.
+  const where: string[] = [];
+  const values: unknown[] = [];
+  const bind = (value: unknown) => {
+    values.push(value);
+    return `$${values.length}`;
+  };
 
-  if (!includeHidden) {
-    query = query.eq("status", "visible");
-  }
-  if (department && department !== "all") {
-    query = query.eq("department", department);
-  }
+  if (!includeHidden) where.push(`s.status = 'visible'`);
+  if (department && department !== "all") where.push(`s.department = ${bind(department)}`);
   if (questionId && questionId !== "all") {
-    if (questionId === "none") {
-      query = query.is("question_id", null);
-    } else {
-      query = query.eq("question_id", questionId);
-    }
+    where.push(questionId === "none" ? "s.question_id is null" : `s.question_id::text = ${bind(questionId)}`);
   }
-  if (onlyFeatured) {
-    query = query.eq("featured", true);
-  }
+  if (onlyFeatured) where.push("s.featured");
   if (search) {
-    query = query.or(
-      `name.ilike.%${search}%,department.ilike.%${search}%,message.ilike.%${search}%`
-    );
+    const pattern = bind(`%${search}%`);
+    where.push(`(s.name ilike ${pattern} or s.department ilike ${pattern} or s.message ilike ${pattern})`);
   }
 
-  query = query.order("created_at", { ascending: sort === "oldest" });
+  try {
+    // Embed the parent question's title/slug so the dashboard can tag each
+    // guess with which question it answered, without an extra round trip.
+    const submissions = await sql.query(
+      `select s.*,
+              case when q.id is null then null
+                   else json_build_object('id', q.id, 'title', q.title, 'slug', q.slug)
+              end as question
+       from submissions s
+       left join questions q on q.id = s.question_id
+       ${where.length ? `where ${where.join(" and ")}` : ""}
+       order by s.created_at ${sort}`,
+      values
+    );
 
-  const { data, error, count } = await query;
-  if (error) {
+    // Stats are computed from the full, unfiltered table so the dashboard
+    // header numbers stay stable while the admin searches/filters below.
+    const [[stats], departmentRows, questionList] = await Promise.all([
+      sql`
+        select count(*)::int as total,
+               count(distinct department)::int as departments,
+               count(*) filter (where created_at >= date_trunc('day', now()))::int as today
+        from submissions
+      `,
+      sql`select distinct department from submissions order by department`,
+      sql`select id, title, slug from questions order by created_at desc`,
+    ]);
+
+    return NextResponse.json({
+      submissions,
+      count: submissions.length,
+      stats,
+      departmentList: departmentRows.map((r) => r.department),
+      questionList,
+    });
+  } catch (error) {
     console.error("list submissions failed", error);
     return NextResponse.json({ error: "Failed to load submissions." }, { status: 500 });
   }
-
-  // Stats are computed from the full, unfiltered table so the dashboard
-  // header numbers stay stable while the admin searches/filters below.
-  const { data: allRows } = await supabase
-    .from("submissions")
-    .select("department, created_at");
-
-  const { data: questionRows } = await supabase
-    .from("questions")
-    .select("id, title, slug")
-    .order("created_at", { ascending: false });
-
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const departments = new Set((allRows ?? []).map((r) => r.department));
-  const todayCount = (allRows ?? []).filter(
-    (r) => new Date(r.created_at) >= startOfToday
-  ).length;
-
-  return NextResponse.json({
-    submissions: data ?? [],
-    count: count ?? 0,
-    stats: {
-      total: allRows?.length ?? 0,
-      departments: departments.size,
-      today: todayCount,
-    },
-    departmentList: Array.from(departments).sort(),
-    questionList: questionRows ?? [],
-  });
 }
