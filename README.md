@@ -1,6 +1,26 @@
-# The Spotlight — Guessing Game
+# The Spotlight
 
-A two-sided app for AFIT's "The Spotlight" media platform:
+The public site and admin tools for AFIT's "The Spotlight" media platform:
+
+- **Homepage (`/`)** — editorial front page (masthead with the text mark,
+  section desks, the Spotlight Profile format, publishing rhythm). Add real
+  published stories to `stories` in `src/content/site.ts` and they appear in
+  "Latest" and under their desk. If exactly one guess is live, it's teased in
+  the lead.
+- **Talk To The Founder (`/founder`)** — message straight to the founder;
+  name and contact are optional. `/founder?topic=recommend` is the
+  "Recommend someone" variant.
+- **Anonymous messages (`/message`)** — no name, no account, and the IP is
+  never stored with the message.
+- **Admin → Messages** — inbox for both. **Every message is kept for 30 days**
+  from when it was sent, then purged; the admin deleting it is the only way
+  it leaves sooner. Requires `supabase/migrations/003_add_messages.sql`.
+
+Brand: the text mark (`src/components/brand/Wordmark.tsx`) is the primary
+signature. The logo mark (`public/brand/logo-mark.png`) is used sparingly —
+favicon, footer, and social preview image only.
+
+The guessing game:
 
 1. **Public pages (`/your-question-slug`)** — each guessing round ("question")
    gets its own link. Students who open it submit a guess; every submission
@@ -22,10 +42,8 @@ A two-sided app for AFIT's "The Spotlight" media platform:
 - Close a question (`Close guessing`) once its Monday reveal happens; its
   link then shows a "this guess is closed" state instead of the form. You can
   reopen it any time.
-- The bare domain (`/`) isn't meant to be shared — if there's exactly one
-  active question it redirects there for convenience; otherwise it shows a
-  neutral "check the link you were sent" page. It never lists questions
-  publicly.
+- The bare domain (`/`) is now the homepage. If there's exactly one active
+  question it's linked from the lead; it never lists questions publicly.
 - Deleting a question does **not** delete the guesses that answered it — they
   become "Uncategorized" in All Guesses (see `ON DELETE SET NULL` in the
   schema).
@@ -67,6 +85,10 @@ going forward. Nothing above needs to change structurally for that to slot in.
    - **Already have a `submissions` table from before question links
      existed:** run `supabase/migrations/002_add_questions.sql` instead —
      it only adds what's missing and won't touch your existing rows.
+   - **Existing install without messages:** run
+     `supabase/migrations/003_add_messages.sql`. Optionally schedule the
+     pg_cron purge at the bottom of that file; expiry also runs every time
+     the admin inbox loads, so it works without it.
 3. From **Project Settings → API**, copy the Project URL, `anon` key, and
    `service_role` key.
 

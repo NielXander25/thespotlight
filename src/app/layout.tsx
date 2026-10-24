@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Space_Grotesk, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   variable: "--font-display",
+  display: "swap",
+});
+
+// The text mark and editorial headlines.
+const serif = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["600", "700", "900"],
+  variable: "--font-serif",
   display: "swap",
 });
 
@@ -17,9 +25,16 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "The Spotlight — Who's in the Spotlight?",
+  title: {
+    default: "The Spotlight — Stories Worth Seeing",
+    template: "%s · The Spotlight",
+  },
   description:
-    "Think you know who's stepping into The Spotlight this Monday? Make your guess.",
+    "The Spotlight discovers and amplifies remarkable people, ideas, and opportunities at AFIT. You do not have to be famous to be worth knowing.",
+  openGraph: {
+    siteName: "The Spotlight",
+    images: ["/brand/logo-mark.png"],
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${display.variable} ${serif.variable} ${body.variable}`}>
       <body>{children}</body>
     </html>
   );

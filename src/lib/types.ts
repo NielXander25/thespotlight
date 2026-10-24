@@ -50,3 +50,24 @@ export interface QuestionInput {
   revealLabel?: string;
   slug?: string;
 }
+
+export type MessageChannel = "anonymous" | "founder";
+
+export interface Message {
+  id: string;
+  channel: MessageChannel;
+  body: string;
+  sender_name: string | null; // founder channel only, optional
+  sender_contact: string | null; // founder channel only, optional
+  is_read: boolean;
+  created_at: string;
+  expires_at: string; // created_at + 30 days; purged after this unless deleted sooner
+}
+
+export interface PublicMessageInput {
+  channel: MessageChannel;
+  body: string;
+  senderName?: string;
+  senderContact?: string;
+  honeypot?: string; // spam trap, must stay empty
+}

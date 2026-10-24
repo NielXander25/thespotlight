@@ -1,4 +1,14 @@
-const RESERVED_SLUGS = new Set(["admin", "api", "favicon.ico"]);
+// Top-level routes that a question link must never shadow.
+const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "favicon.ico",
+  "icon.png",
+  "apple-icon.png",
+  "brand",
+  "founder",
+  "message",
+]);
 
 /** Turns a title into a URL-safe slug: "Who's in the Spotlight?" -> "whos-in-the-spotlight" */
 export function slugify(input: string): string {

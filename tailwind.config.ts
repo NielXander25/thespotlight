@@ -20,9 +20,12 @@ const config: Config = {
           dim: "#233166",
         },
         ink: "#0B1024",        // near-black text for light admin surfaces
+        paper: "#F6F7FB",      // editorial page background on the public site
+        rule: "#DCE0EC",       // hairline dividers on paper
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
         body: ["var(--font-body)", "sans-serif"],
       },
       boxShadow: {
