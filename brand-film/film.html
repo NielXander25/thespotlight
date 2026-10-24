@@ -1,0 +1,364 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>The Spotlight — Brand Film</title>
+<style>
+  @font-face { font-family: Playfair; font-weight: 600; src: url(fonts/playfair-600.woff2); }
+  @font-face { font-family: Playfair; font-weight: 700; src: url(fonts/playfair-700.woff2); }
+  @font-face { font-family: Playfair; font-weight: 900; src: url(fonts/playfair-900.woff2); }
+  @font-face { font-family: Inter; font-weight: 400; src: url(fonts/inter-400.woff2); }
+  @font-face { font-family: Inter; font-weight: 500; src: url(fonts/inter-500.woff2); }
+  @font-face { font-family: Inter; font-weight: 600; src: url(fonts/inter-600.woff2); }
+
+  :root { --stage: #090E22; --beam: #F8FAFC; --mist: #98A3C7; --brand: #3D63F5; --brand-light: #6C8AFF; }
+  html, body { margin: 0; background: #000; }
+  #stage {
+    position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(ellipse 80% 70% at 50% 40%, #0E1638 0%, var(--stage) 55%, #05081A 100%);
+    font-family: Inter, sans-serif; color: var(--beam);
+  }
+  .abs { position: absolute; will-change: transform, opacity; }
+  .serif { font-family: Playfair, Georgia, serif; }
+  .blue { color: var(--brand-light); }
+
+  /* Spotlight: cone + pool, rotated around a lamp point above frame */
+  #rig { left: 0; top: 0; width: 1920px; height: 1080px; }
+  #cone {
+    left: 50%; top: -140px; width: 900px; height: 1250px; margin-left: -450px;
+    transform-origin: 50% 0;
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+    background: linear-gradient(180deg, rgba(220,230,255,.42) 0%, rgba(140,165,255,.16) 45%, rgba(61,99,245,.03) 100%);
+    mix-blend-mode: screen;
+  }
+  /* wider, fainter halo gives the beam a soft edge without a blur filter */
+  #cone2 {
+    left: 50%; top: -140px; width: 1100px; height: 1250px; margin-left: -550px;
+    transform-origin: 50% 0;
+    clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
+    background: linear-gradient(180deg, rgba(200,215,255,.16) 0%, rgba(108,138,255,.07) 50%, rgba(61,99,245,0) 100%);
+    mix-blend-mode: screen;
+  }
+  #pool {
+    width: 760px; height: 150px; margin-left: -380px; margin-top: -75px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(235,242,255,.85) 0%, rgba(108,138,255,.45) 40%, rgba(61,99,245,0) 72%);
+    filter: blur(4px); mix-blend-mode: screen;
+  }
+  #dust { left: 0; top: 0; width: 1920px; height: 1080px; mix-blend-mode: screen; }
+
+  /* Crowd of "people" dots */
+  .dot { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #2A386E; }
+
+  .line { white-space: nowrap; }
+  .word { display: inline-block; }
+
+  #grain { inset: 0; opacity: .06; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #vignette { inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 75% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  #flash { inset: 0; background: #EAF0FF; opacity: 0; mix-blend-mode: screen; }
+  #fade { inset: 0; background: #000; opacity: 0; }
+
+  .kicker { font: 600 22px/1 Inter, sans-serif; letter-spacing: .32em; text-transform: uppercase; color: var(--brand-light); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="dust" class="abs" width="1920" height="1080"></canvas>
+  <div id="rig" class="abs">
+    <div id="cone2" class="abs"></div>
+    <div id="cone" class="abs"></div>
+    <div id="pool" class="abs"></div>
+  </div>
+  <div id="crowd" class="abs" style="inset:0"></div>
+  <div id="hero" class="abs dot" style="background:#F8FAFC"></div>
+  <div id="heroRing" class="abs" style="width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid var(--brand-light)"></div>
+
+  <!-- S1 -->
+  <div id="s1" class="abs serif" style="left:160px; top:330px; font-weight:900; font-size:112px; line-height:1.08; letter-spacing:-.01em">
+    <div class="line"><span class="word">Remarkable</span> <span class="word">things</span> <span class="word">happen</span></div>
+    <div class="line"><span class="word">around</span> <span class="word">us,</span> <span class="word blue">every</span> <span class="word blue">day.</span></div>
+  </div>
+
+  <!-- S2 -->
+  <div id="s2a" class="abs serif" style="left:160px; top:150px; font-weight:900; font-size:96px">Some are celebrated.</div>
+  <div id="s2b" class="abs serif" style="left:160px; top:270px; font-weight:700; font-size:96px; color:var(--mist); font-style:italic">Others go unnoticed.</div>
+
+  <!-- S3 -->
+  <div id="s3" class="abs" style="left:160px; top:170px">
+    <div id="s3k" class="kicker">The Spotlight</div>
+    <div class="serif" style="margin-top:26px; font-weight:900; font-size:92px; line-height:1.08">
+      <div class="line"><span class="word">finds</span> <span class="word">the</span> <span class="word">story</span> <span class="word blue" style="font-style:italic">beneath</span></div>
+      <div class="line"><span class="word">the</span> <span class="word">achievement.</span></div>
+    </div>
+  </div>
+
+  <!-- S4: kinetic roles -->
+  <div id="s4" class="abs" style="inset:0">
+    <div class="role abs serif" style="left:0;width:1920px;top:360px;text-align:center;font-weight:900;font-size:200px;letter-spacing:.01em">BUILDERS</div>
+    <div class="role abs serif" style="left:0;width:1920px;top:360px;text-align:center;font-weight:900;font-size:200px;letter-spacing:.01em">CREATORS</div>
+    <div class="role abs serif" style="left:0;width:1920px;top:360px;text-align:center;font-weight:900;font-size:180px;letter-spacing:.01em">RESEARCHERS</div>
+    <div class="role abs serif" style="left:0;width:1920px;top:360px;text-align:center;font-weight:900;font-size:200px;letter-spacing:.01em">LEADERS</div>
+    <div class="desk abs kicker" style="left:0;width:1920px;top:640px;text-align:center">Technology &amp; Innovation</div>
+    <div class="desk abs kicker" style="left:0;width:1920px;top:640px;text-align:center">Creativity &amp; Culture</div>
+    <div class="desk abs kicker" style="left:0;width:1920px;top:640px;text-align:center">Academia &amp; Learning</div>
+    <div class="desk abs kicker" style="left:0;width:1920px;top:640px;text-align:center">Leadership &amp; Impact</div>
+  </div>
+
+  <!-- S5 -->
+  <div id="s5" class="abs" style="left:160px; top:300px">
+    <div class="serif" style="font-weight:700; font-style:italic; font-size:104px; color:var(--brand-light)">The quiet ones,</div>
+    <div class="serif" style="font-weight:900; font-size:104px; margin-top:6px">doing meaningful work.</div>
+  </div>
+
+  <!-- S6 -->
+  <div id="s6" class="abs serif" style="left:0; width:1920px; top:330px; text-align:center; font-weight:900; font-size:104px; line-height:1.12">
+    <div id="s6a">You do not have to be famous</div>
+    <div id="s6b" class="blue" style="font-style:italic">to be worth knowing.</div>
+  </div>
+
+  <!-- S7: lockup -->
+  <div id="s7" class="abs" style="left:0; top:0; width:1920px; height:1080px">
+    <div id="lockup" class="abs" style="left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:56px">
+      <div id="mark" style="width:230px;height:230px;border-radius:50%;overflow:hidden;flex:none">
+        <img src="logo-mark.png" style="width:363px;height:363px;margin:-63px 0 0 -60px;display:block">
+      </div>
+      <div id="divider" style="width:4px;height:210px;background:linear-gradient(180deg,rgba(108,138,255,0),#6C8AFF 30%,#6C8AFF 70%,rgba(108,138,255,0))"></div>
+      <div>
+        <div id="wordmark" class="serif" style="font-weight:900; font-size:132px; line-height:1; letter-spacing:.02em; white-space:nowrap"><span class="blue">THE</span> SPOTLIGHT</div>
+        <div id="tagline" style="margin-top:28px; font:600 30px/1 Inter, sans-serif; letter-spacing:.5em; white-space:nowrap">STORIES WORTH <span class="blue">SEEING.</span></div>
+      </div>
+    </div>
+    <div id="sign" class="abs kicker" style="left:0; width:1920px; top:880px; text-align:center; color:var(--mist); letter-spacing:.42em">Discover · Tell · Amplify · Connect</div>
+    <div id="afit" class="abs kicker" style="left:0; width:1920px; top:940px; text-align:center; font-size:18px">Starting at AFIT</div>
+  </div>
+
+  <div id="flash" class="abs"></div>
+  <div id="grain" class="abs"></div>
+  <div id="vignette" class="abs"></div>
+  <div id="fade" class="abs"></div>
+</div>
+
+<script>
+// ---------- timing (seconds) — matched to the voiceover ----------
+const T = {
+  beamOn: 0.4, s1: [2.19, 4.27], s1out: 5.9,
+  celebrated: 6.5, unnoticed: 8.75, s2out: 11.3,
+  s3: 12.22, achievement: 14.12, s3out: 16.2,
+  roles: [16.71, 17.67, 18.84, 19.92], s4out: 21.2,
+  quiet: 21.87, meaningful: 22.71, s5out: 25.1,
+  famous: 25.73, worth: 27.78, s6out: 30.6,
+  reveal: 31.25, tagline: 32.59, sign: 34.2, afit: 35.0, end: 40.0,
+};
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => 1 - Math.pow(1 - clamp(k), 3);              // easeOutCubic
+const easeIO = k => { k = clamp(k); return k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2; };
+const back = k => { k = clamp(k); const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const win = (t, a, b, fi = .5, fo = .5) => Math.min(ease((t - a) / fi), 1 - ease((t - b) / fo)); // in/out window
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+function set(el, o = 1, x = 0, y = 0, s = 1, blur = 0) {
+  el.style.opacity = clamp(o);
+  el.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+  el.style.filter = blur > .05 ? `blur(${blur}px)` : 'none';
+}
+// Word-by-word reveal starting at `start`, `gap` seconds apart.
+function words(container, start, gap, outAt) {
+  container.querySelectorAll('.word').forEach((w, i) => {
+    const k = ease((now - start - i * gap) / .55);
+    const o = Math.min(k, 1 - ease((now - outAt) / .45));
+    set(w, o, 0, (1 - k) * 46, 1, (1 - k) * 10);
+  });
+}
+
+// ---------- crowd ----------
+const crowd = $('#crowd');
+const rand = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(42);
+const dots = [];
+for (let r = 0; r < 4; r++) {
+  for (let c = 0; c < 22; c++) {
+    const d = document.createElement('div');
+    d.className = 'abs dot';
+    const x = 230 + c * 70 + (r % 2) * 35 + (rand() - .5) * 18;
+    const y = 640 + r * 70 + (rand() - .5) * 14;
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    crowd.appendChild(d);
+    dots.push({ el: d, x, y, r, c, seed: rand(), celebrated: false });
+  }
+}
+// a few "celebrated" ones, and our hero (unnoticed, far right)
+[[0, 4], [1, 9], [0, 13], [2, 6]].forEach(([r, c]) => dots[r * 22 + c].celebrated = true);
+const hero = dots[2 * 22 + 17];
+hero.el.style.visibility = 'hidden';
+const HERO = { x: hero.x, y: hero.y };
+
+// ---------- dust particles in the beam ----------
+const dust = $('#dust').getContext('2d');
+const motes = Array.from({ length: 140 }, () => ({ x: rand(), y: rand(), z: .3 + rand() * .7, p: rand() * 6.28 }));
+
+// ---------- render ----------
+let now = 0;
+window.renderAt = function (t) {
+  now = t;
+
+  // Beam: where it points over time
+  let beamX = 960, beamY = 820, beamW = 1, beamO = 0;
+  beamO = ease((t - T.beamOn) / 1.6) * .9;
+  if (t > 6.2 && t < 11.6) { beamX = 960; beamY = 760; }
+  // swing to the hero during S3
+  const swing = easeIO((t - 10.4) / 1.6);
+  if (t >= 10.4 && t < 16.3) { beamX = lerp(960, HERO.x, swing); beamY = lerp(760, HERO.y, swing); beamW = lerp(1, .55, swing); }
+  if (t >= 16.3 && t < 21.3) { beamX = 960; beamY = 700; beamW = .9 + .1 * Math.sin(t * 2); }
+  if (t >= 21.3 && t < 25.3) { beamX = lerp(1500, 1380, ease((t - 21.3) / 4)); beamY = 760; beamW = .5; }
+  if (t >= 25.3 && t < T.reveal) { beamX = 960; beamY = 800; beamW = lerp(1, .12, easeIO((t - 28.4) / 2.85)); beamO = lerp(.8, 1, (t - 25.3) / 6); }
+  if (t >= T.reveal) { beamX = 960; beamY = 1070; beamW = lerp(1.6, 1.1, ease((t - T.reveal) / 3)); beamO = .55 * (1 - ease((t - 38) / 1.6)); }
+
+  const ang = Math.atan2(beamX - 960, beamY + 140) * -180 / Math.PI;
+  const len = Math.hypot(beamX - 960, beamY + 140) / 1250;
+  $('#cone').style.transform = `rotate(${ang}deg) scale(${beamW}, ${len})`;
+  $('#cone').style.opacity = beamO * (1 + .04 * Math.sin(t * 7.3));
+  const pool = $('#pool');
+  pool.style.left = beamX + 'px'; pool.style.top = beamY + 'px';
+  pool.style.opacity = beamO; pool.style.transform = `scale(${beamW})`;
+
+  // Dust
+  dust.clearRect(0, 0, 1920, 1080);
+  for (const m of motes) {
+    const y = ((m.y * 1080 - t * 18 * m.z) % 1080 + 1080) % 1080;
+    const x = m.x * 1920 + Math.sin(t * .6 + m.p) * 20;
+    // only visible near the beam axis
+    const axisX = 960 + (beamX - 960) * ((y + 140) / (beamY + 140));
+    const near = Math.max(0, 1 - Math.abs(x - axisX) / (260 * beamW * ((y + 140) / 1100) + 30));
+    const a = near * beamO * .55 * m.z;
+    if (a < .01) continue;
+    dust.fillStyle = `rgba(220,230,255,${a})`;
+    dust.beginPath(); dust.arc(x, y, 1.2 + 1.8 * m.z, 0, 6.283); dust.fill();
+  }
+
+  // S1
+  words($('#s1'), T.s1[0], .28, T.s1out); // words 5-6 ("every day.") are re-timed below
+  const s1w = $('#s1').querySelectorAll('.word');
+  [5, 6].forEach((i, j) => {
+    const k = ease((t - T.s1[1] - j * .25) / .55);
+    set(s1w[i], Math.min(k, 1 - ease((t - T.s1out) / .45)), 0, (1 - k) * 46, 1, (1 - k) * 10);
+  });
+
+  // Crowd (S2 -> S3)
+  const crowdIn = ease((t - 6.1) / 1.0), crowdOut = ease((t - 15.9) / .6);
+  dots.forEach(d => {
+    const appear = ease((t - 6.1 - d.c * .025 - d.r * .05) / .6);
+    let col = '#2A386E', glow = 0, s = 1;
+    if (d.celebrated) {
+      const on = ease((t - T.celebrated - .1) / .4) * (1 - ease((t - T.unnoticed) / .7));
+      col = on > .5 ? '#F8FAFC' : '#2A386E'; glow = on; s = 1 + .5 * on;
+    }
+    const dim = lerp(1, .45, ease((t - T.unnoticed) / .8));
+    d.el.style.background = col;
+    d.el.style.boxShadow = glow ? `0 0 ${40 * glow}px ${10 * glow}px rgba(108,138,255,${.7 * glow})` : 'none';
+    d.el.style.opacity = appear * (d.celebrated && glow > .5 ? 1 : dim) * (1 - crowdOut);
+    d.el.style.transform = `translateY(${(1 - appear) * 30 + Math.sin(t * 1.3 + d.seed * 6) * 2}px) scale(${s})`;
+  });
+
+  // Hero dot: unnoticed in the crowd, then found by the light and lifted
+  const heroIn = ease((t - 6.1 - hero.c * .025 - hero.r * .05) / .6);
+  const found = ease((t - 11.6) / .7);
+  const lift = easeIO((t - 13.0) / 1.6);
+  const heroOut = ease((t - T.s3out) / .5);
+  const hx = lerp(HERO.x, 1500, lift), hy = lerp(HERO.y, 600, lift);
+  const he = $('#hero');
+  he.style.left = hx + 'px'; he.style.top = hy + 'px';
+  he.style.background = found > .3 ? '#F8FAFC' : '#2A386E';
+  he.style.opacity = heroIn * lerp(.45, 1, found) * (1 - heroOut) * (t > 6 ? 1 : 0);
+  he.style.boxShadow = `0 0 ${60 * found}px ${16 * found}px rgba(108,138,255,${.6 * found})`;
+  he.style.transform = `scale(${1 + 2.2 * lift})`;
+  const ring = $('#heroRing');
+  ring.style.left = hx + 'px'; ring.style.top = hy + 'px';
+  const ringK = ease((t - 13.4) / .9);
+  ring.style.opacity = ringK * (1 - heroOut) * .9;
+  ring.style.transform = `scale(${.4 + ringK * (1 + .05 * Math.sin(t * 3))})`;
+  if (t >= 13.0 && t < 16.3) { // keep the light on the hero as it lifts
+    const k = easeIO((t - 13.0) / 1.6);
+    const bx = lerp(HERO.x, 1500, k), by = lerp(HERO.y, 600, k);
+    const a2 = Math.atan2(bx - 960, by + 140) * -180 / Math.PI;
+    $('#cone').style.transform = `rotate(${a2}deg) scale(.55, ${Math.hypot(bx - 960, by + 140) / 1250})`;
+    pool.style.left = bx + 'px'; pool.style.top = (by + 30) + 'px'; pool.style.transform = 'scale(.4)';
+  }
+
+  // S2 text
+  { const k = ease((t - T.celebrated) / .5), o = Math.min(k, 1 - ease((t - T.s2out) / .5));
+    set($('#s2a'), o, 0, (1 - k) * 40, 1, (1 - k) * 8); }
+  { const k = ease((t - T.unnoticed) / .7), o = Math.min(k * .9, 1 - ease((t - T.s2out) / .5));
+    set($('#s2b'), o, (1 - k) * -30, 0, 1, (1 - k) * 8); }
+
+  // S3
+  { const k = ease((t - T.s3 + .1) / .5);
+    set($('#s3k'), Math.min(k, 1 - ease((t - T.s3out) / .45)), (1 - k) * -30, 0); }
+  { const ws = $('#s3').querySelectorAll('.word');
+    ws.forEach((w, i) => {
+      const st = i < 4 ? T.s3 + .25 + i * .3 : T.achievement + (i - 4) * .3;
+      const k = ease((t - st) / .55);
+      set(w, Math.min(k, 1 - ease((t - T.s3out) / .45)), 0, (1 - k) * 46, 1, (1 - k) * 10);
+    }); }
+
+  // S4 roles: each slams in on its word and pushes back
+  const roles = $$('.role'), desks = $$('.desk');
+  roles.forEach((el, i) => {
+    const st = T.roles[i], nx = i < 3 ? T.roles[i + 1] : T.s4out;
+    const k = clamp((t - st) / .32), out = ease((t - nx + .05) / .25);
+    const vis = t >= st - .01 && out < 1;
+    set(el, vis ? Math.min(ease(k * 1.4), 1 - out) : 0, 0, 0, lerp(1.35, 1, back(k)) * (1 - .08 * out), (1 - ease(k)) * 14 + out * 8);
+    const dk = ease((t - st - .12) / .4);
+    set(desks[i], vis ? Math.min(dk, 1 - out) * .95 : 0, 0, (1 - dk) * 18);
+  });
+
+  // S5
+  { const [a, b] = $('#s5').children;
+    const ka = ease((t - T.quiet) / .7), kb = ease((t - T.meaningful) / .6), o = 1 - ease((t - T.s5out) / .5);
+    set(a, Math.min(ka, o), (1 - ka) * -40, 0, 1, (1 - ka) * 8);
+    set(b, Math.min(kb, o), 0, (1 - kb) * 40, 1, (1 - kb) * 8); }
+
+  // S6
+  { const ka = ease((t - T.famous) / .7), kb = ease((t - T.worth) / .7), o = 1 - ease((t - T.s6out) / .5);
+    set($('#s6a'), Math.min(ka, o), 0, (1 - ka) * 30, lerp(1.04, 1, ka) + .02 * clamp((t - T.famous) / 5), (1 - ka) * 10);
+    set($('#s6b'), Math.min(kb, o), 0, (1 - kb) * 30, 1 + .02 * clamp((t - T.worth) / 3), (1 - kb) * 10); }
+
+  // S7 reveal
+  const r = t - T.reveal;
+  $('#flash').style.opacity = r >= 0 ? .85 * Math.exp(-r * 5) : 0;
+  { const k = ease(r / .9);
+    set($('#mark'), r >= 0 ? k : 0, (1 - k) * 60, 0, lerp(.8, 1, back(r / .8)), (1 - k) * 12);
+    const dv = ease((r - .2) / .6); $('#divider').style.opacity = r >= 0 ? dv : 0; $('#divider').style.transform = `scaleY(${dv})`;
+    const kw = ease((r - .25) / .8);
+    set($('#wordmark'), r >= 0 ? kw : 0, (1 - kw) * -50, 0, 1, (1 - kw) * 14);
+    const kt = ease((t - T.tagline) / .8);
+    set($('#tagline'), kt, (1 - kt) * -30, 0, 1, (1 - kt) * 8);
+    $('#tagline').style.letterSpacing = lerp(.9, .5, kt) + 'em';
+    const ks = ease((t - T.sign) / .8); set($('#sign'), ks * .9, 0, (1 - ks) * 16);
+    const ka = ease((t - T.afit) / .8); set($('#afit'), ka, 0, (1 - ka) * 16);
+    // slow push-in on the lockup
+    $('#lockup').style.transform = `translate(-50%,-50%) scale(${1 + .03 * clamp(r / 8)})`;
+  }
+
+  $('#cone2').style.transform = $('#cone').style.transform;
+  $('#cone2').style.opacity = $('#cone').style.opacity;
+
+  $('#fade').style.opacity = ease((t - 38.4) / 1.5) + (1 - ease(t / .6));
+};
+
+window.ready = document.fonts.ready.then(() => new Promise(r => {
+  const img = $('#mark img'); img.complete ? r() : img.onload = r;
+})).then(() => { window.renderAt(0); return true; });
+
+// Preview mode: open the file in a browser to watch it play in real time.
+if (!/render/.test(location.hash)) {
+  window.ready.then(() => {
+    const t0 = performance.now();
+    const tick = () => { window.renderAt(((performance.now() - t0) / 1000) % T.end); requestAnimationFrame(tick); };
+    tick();
+  });
+}
+</script>
+</body>
+</html>
