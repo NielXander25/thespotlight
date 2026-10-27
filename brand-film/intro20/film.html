@@ -1,0 +1,337 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>The Spotlight — 20s Intro</title>
+<style>
+  @font-face { font-family: Playfair; font-weight: 600; src: url(fonts/playfair-600.woff2); }
+  @font-face { font-family: Playfair; font-weight: 700; src: url(fonts/playfair-700.woff2); }
+  @font-face { font-family: Playfair; font-weight: 900; src: url(fonts/playfair-900.woff2); }
+  @font-face { font-family: Inter; font-weight: 400; src: url(fonts/inter-400.woff2); }
+  @font-face { font-family: Inter; font-weight: 500; src: url(fonts/inter-500.woff2); }
+  @font-face { font-family: Inter; font-weight: 600; src: url(fonts/inter-600.woff2); }
+
+  :root { --stage:#090E22; --beam:#F8FAFC; --mist:#98A3C7; --brand:#3D63F5; --brand-light:#6C8AFF; }
+  html,body { margin:0; background:#000; }
+  #stage {
+    position:relative; width:1920px; height:1080px; overflow:hidden;
+    background:radial-gradient(ellipse 85% 75% at 50% 42%, #0E1838 0%, var(--stage) 56%, #05081A 100%);
+    font-family:Inter, sans-serif; color:var(--beam);
+  }
+  .abs { position:absolute; will-change:transform,opacity; }
+  .serif { font-family:Playfair, Georgia, serif; }
+  .blue { color:var(--brand-light); }
+  .center { left:0; width:1920px; text-align:center; }
+
+  /* spotlight */
+  #cone2 { left:50%; top:-150px; width:1180px; height:1300px; margin-left:-590px; transform-origin:50% 0;
+    clip-path:polygon(45% 0,55% 0,100% 100%,0 100%);
+    background:linear-gradient(180deg, rgba(200,215,255,.15) 0%, rgba(108,138,255,.06) 50%, rgba(61,99,245,0) 100%);
+    mix-blend-mode:screen; }
+  #cone { left:50%; top:-150px; width:860px; height:1300px; margin-left:-430px; transform-origin:50% 0;
+    clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);
+    background:linear-gradient(180deg, rgba(222,232,255,.40) 0%, rgba(140,165,255,.15) 45%, rgba(61,99,245,.03) 100%);
+    mix-blend-mode:screen; }
+  #pool { width:720px; height:150px; margin:-75px 0 0 -360px; border-radius:50%;
+    background:radial-gradient(ellipse at center, rgba(236,243,255,.85) 0%, rgba(108,138,255,.42) 40%, rgba(61,99,245,0) 72%);
+    mix-blend-mode:screen; }
+  #dust { left:0; top:0; width:1920px; height:1080px; mix-blend-mode:screen; }
+
+  .kicker { font:600 22px/1 Inter, sans-serif; letter-spacing:.34em; text-transform:uppercase; color:var(--brand-light); }
+  .word { display:inline-block; }
+
+  /* card */
+  .card { left:50%; top:50%; width:900px; margin-left:-450px; margin-top:-185px; }
+  .chip { width:150px; height:150px; margin:0 auto; border-radius:34px;
+    background:linear-gradient(160deg, rgba(36,49,102,.55), rgba(17,27,62,.35));
+    border:1px solid rgba(140,165,255,.28); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 30px 80px -30px rgba(61,99,245,.6); }
+  .card h2 { font:900 62px/1.06 Playfair, serif; margin:34px 0 0; text-align:center; letter-spacing:-.01em; }
+  .card p { margin:16px auto 0; max-width:620px; text-align:center; font:400 24px/1.4 Inter, sans-serif; color:var(--mist); }
+
+  /* logo sting */
+  #sting { left:0; top:0; width:1920px; height:1080px; }
+  #lockup { left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:52px; }
+  #markWrap { width:220px; height:220px; border-radius:50%; overflow:hidden; flex:none; position:relative; }
+  #markWrap img { width:348px; height:348px; margin:-61px 0 0 -58px; display:block; }
+  #markRing { position:absolute; inset:-14px; border-radius:50%; border:3px solid var(--brand-light); }
+  #divider { width:4px; height:208px; background:linear-gradient(180deg,rgba(108,138,255,0),#6C8AFF 30%,#6C8AFF 70%,rgba(108,138,255,0)); }
+  #wm { font:900 128px/1 Playfair, serif; letter-spacing:.02em; white-space:nowrap; }
+  #tag { margin-top:26px; font:600 28px/1 Inter, sans-serif; letter-spacing:.5em; white-space:nowrap; }
+  #cta { top:860px; color:var(--mist); letter-spacing:.4em; font-size:19px; }
+
+  #grain::before { content:""; position:absolute; inset:0; opacity:.05; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #vignette { inset:0; pointer-events:none; background:radial-gradient(ellipse 78% 78% at 50% 50%, rgba(0,0,0,0) 54%, rgba(0,0,0,.55) 100%); }
+  #flash { inset:0; background:#EAF0FF; opacity:0; mix-blend-mode:screen; }
+  #fade { inset:0; background:#000; opacity:0; }
+</style>
+</head>
+<body>
+<div id="stage" class="abs">
+  <div id="grain" class="abs" style="inset:0"></div>
+  <canvas id="dust" class="abs" width="1920" height="1080"></canvas>
+  <div id="rig" class="abs" style="inset:0">
+    <div id="cone2" class="abs"></div>
+    <div id="cone" class="abs"></div>
+    <div id="pool" class="abs"></div>
+  </div>
+
+  <!-- H1 -->
+  <div id="h1" class="abs center serif" style="top:456px; font-weight:900; font-size:92px; letter-spacing:-.01em">
+    <span class="word">Remarkable</span> <span class="word">things</span> <span class="word">happen</span> <span class="word">every</span> <span class="word">day.</span>
+  </div>
+  <!-- H2 -->
+  <div id="h2" class="abs center serif" style="top:470px; font-weight:900; font-size:108px">
+    <span class="word">Most</span> <span class="word">go</span> <span class="word blue" style="font-style:italic">unseen.</span>
+  </div>
+  <!-- H3 positioning -->
+  <div id="h3" class="abs center serif" style="top:470px; font-weight:700; font-size:92px">
+    <span class="word">We</span> <span class="word">find</span> <span class="word">what</span> <span class="word blue">others</span> <span class="word blue">miss.</span>
+  </div>
+
+  <!-- cards context kicker -->
+  <div id="cardsKicker" class="abs center kicker" style="top:232px; opacity:0">What The Spotlight covers</div>
+
+  <!-- CARDS -->
+  <div id="cards" class="abs" style="inset:0"></div>
+
+  <!-- differentiator -->
+  <div id="diff" class="abs center" style="top:430px">
+    <div class="serif" style="font-weight:900; font-size:96px; line-height:1.06">People <span class="blue">beyond</span> popularity.</div>
+  </div>
+
+  <!-- belief -->
+  <div id="belief" class="abs center" style="top:410px">
+    <div id="belief_k" class="kicker" style="color:var(--mist)">Our guiding belief</div>
+    <div class="serif" style="margin-top:26px; font-weight:900; font-size:112px; line-height:1.04">
+      <span class="word">Visibility</span> <span class="word">can</span> <span class="word">create</span> <span class="word blue" style="font-style:italic">possibility.</span>
+    </div>
+  </div>
+
+  <!-- LOGO STING -->
+  <div id="sting" class="abs">
+    <div id="lockup" class="abs">
+      <div id="markWrap"><img src="logo-mark.png"><div id="markRing"></div></div>
+      <div id="divider"></div>
+      <div>
+        <div id="wm" class="serif"><span class="blue">THE</span> SPOTLIGHT</div>
+        <div id="tag">STORIES WORTH <span class="blue">SEEING.</span></div>
+      </div>
+    </div>
+    <div id="cta" class="abs center kicker">AFIT · Be part of the story</div>
+  </div>
+
+  <div id="flash" class="abs"></div>
+  <div id="vignette" class="abs"></div>
+  <div id="fade" class="abs"></div>
+</div>
+
+<script>
+// ---------------- timeline (s) ----------------
+const REVEAL = 15.5;
+const T = {
+  beamOn: 0.3,
+  h1: 0.7, h1out: 2.4,
+  h2: 2.7, h2out: 4.5,
+  h3: 4.8, h3out: 5.5,
+  kicker: 5.6, kickerOut: 12.2,
+  cards: [5.7, 6.8, 7.9, 9.0, 10.1, 11.2], cardHold: 1.02,
+  diff: 12.4, diffOut: 13.5,
+  belief: 13.5, beliefOut: 15.4,
+  reveal: REVEAL, tag: 16.9, cta: 17.7, end: 20.0,
+};
+const CARDS = [
+  { t:"People & Journeys",        d:"The turning points that shape us." },
+  { t:"Achievements & Projects",  d:"Work and ideas that deserve attention." },
+  { t:"Creativity & Innovation",  d:"People making, building, questioning." },
+  { t:"Campus & Community",       d:"The life and voices around us." },
+  { t:"Visual Storytelling",      d:"Cartoons and art that stay with you." },
+  { t:"Interactive Conversations",d:"Questions that invite you to think." },
+];
+
+// ---------------- easing ----------------
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,k)=>a+(b-a)*k;
+const outCubic=k=>1-Math.pow(1-clamp(k),3);
+const outQuint=k=>1-Math.pow(1-clamp(k),5);
+const inOutCubic=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;};
+const outBack=k=>{k=clamp(k);const c=1.7;return 1+(c+1)*Math.pow(k-1,3)+c*Math.pow(k-1,2);};
+const outExpo=k=>{k=clamp(k);return k>=1?1:1-Math.pow(2,-10*k);};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function set(el,o=1,x=0,y=0,s=1,blur=0){
+  el.style.opacity=clamp(o);
+  el.style.transform=`translate(${x}px,${y}px) scale(${s})`;
+  el.style.filter=blur>.05?`blur(${blur}px)`:'none';
+}
+// word-by-word rise
+function words(el,start,gap,outAt,outFast=.4){
+  el.querySelectorAll('.word').forEach((w,i)=>{
+    const k=outCubic((now-start-i*gap)/.5);
+    const o=Math.min(k,1-outCubic((now-outAt)/outFast));
+    set(w,o,0,(1-k)*40,1,(1-k)*8);
+  });
+}
+
+// ---------------- icons ----------------
+const IC = (p)=>`<svg width="78" height="78" viewBox="0 0 48 48" fill="none" stroke="#6C8AFF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICONS = [
+  IC('<circle cx="18" cy="16" r="6"/><path d="M8 38c0-6 4.5-10 10-10s10 4 10 10"/><path d="M30 12c6 2 10 7 10 7s-4 5-10 7" stroke-dasharray="2 4"/>'),
+  IC('<path d="M24 6l4.6 9.3 10.3 1.5-7.4 7.2 1.7 10.2L24 29.4 14.8 34l1.7-10.2-7.4-7.2 10.3-1.5z"/>'),
+  IC('<path d="M24 6v4M10 12l2.8 2.8M38 12l-2.8 2.8M18 30a9 9 0 1 1 12 0c-1.6 1.4-2.5 2.6-2.8 4.5h-6.4c-.3-1.9-1.2-3.1-2.8-4.5z"/><path d="M20 40h8M21 44h6"/>'),
+  IC('<path d="M6 40h36M10 40V20l10-7 10 7v20"/><path d="M17 40v-8h6v8"/><path d="M15 24h2M23 24h2M19 24h0"/>'),
+  IC('<rect x="7" y="11" width="34" height="26" rx="3"/><circle cx="17" cy="20" r="3"/><path d="M9 34l9-9 6 6 6-7 7 8"/>'),
+  IC('<path d="M8 12h22a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H16l-6 5v-5H8a0 0 0 0 1 0 0z" transform="translate(-1 -2)"/><path d="M40 20a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4v5l-6-5" transform="translate(-2 2)"/>'),
+];
+
+// build card DOM
+const cardsRoot=$('#cards');
+const cardEls = CARDS.map((c,i)=>{
+  const el=document.createElement('div'); el.className='abs card';
+  el.innerHTML=`<div class="chip">${ICONS[i]}</div><h2>${c.t}</h2><p>${c.d}</p>`;
+  cardsRoot.appendChild(el); return el;
+});
+
+// progress dots under cards
+const dotsRow=document.createElement('div');
+dotsRow.className='abs center'; dotsRow.style.top='884px';
+dotsRow.innerHTML=CARDS.map(()=>`<span class="d" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#2A386E;margin:0 7px;transition:none"></span>`).join('');
+$('#stage').appendChild(dotsRow);
+const dots=[...dotsRow.querySelectorAll('.d')];
+
+// dust
+const dust=$('#dust').getContext('2d');
+const rand=(s=>()=>(s=(s*16807)%2147483647)/2147483647)(99);
+const motes=Array.from({length:120},()=>({x:rand(),y:rand(),z:.3+rand()*.7,p:rand()*6.28}));
+
+let now=0;
+window.renderAt=function(t){
+  now=t;
+
+  // ---- spotlight target per phase ----
+  let bx=960, by=820, bw=1.0, bo=outCubic((t-T.beamOn)/1.4)*.92;
+  if (t>=T.cards[0] && t<12.3){ bx=960; by=700; bw=.72; } // pool rests below the card
+  if (t>=12.3 && t<15.4){ bx=960; by=820; bw=1.0; }
+  if (t>=13.0 && t<REVEAL){ bw=lerp(1,.16,inOutCubic((t-13.6)/1.8)); } // choke into reveal
+  if (t>=REVEAL){ bx=960; by=980; bw=lerp(1.7,1.15,outCubic((t-REVEAL)/2.2)); bo=.55*(1-outCubic((t-18.4)/1.4)); }
+
+  const ang=Math.atan2(bx-960, by+150)*-180/Math.PI;
+  const len=Math.hypot(bx-960, by+150)/1300;
+  const flick=1+.03*Math.sin(t*7.1);
+  $('#cone').style.transform=`rotate(${ang}deg) scale(${bw},${len})`;
+  $('#cone').style.opacity=bo*flick;
+  $('#cone2').style.transform=`rotate(${ang}deg) scale(${bw},${len})`;
+  $('#cone2').style.opacity=bo*flick;
+  const pool=$('#pool');
+  pool.style.left=bx+'px'; pool.style.top=by+'px'; pool.style.transform=`scale(${bw})`; pool.style.opacity=bo;
+
+  // dust
+  dust.clearRect(0,0,1920,1080);
+  for(const m of motes){
+    const y=((m.y*1080 - t*16*m.z)%1080+1080)%1080;
+    const x=m.x*1920 + Math.sin(t*.6+m.p)*18;
+    const axisX=960+(bx-960)*((y+150)/(by+150));
+    const near=Math.max(0,1-Math.abs(x-axisX)/(240*bw*((y+150)/1150)+28));
+    const a=near*bo*.5*m.z;
+    if(a<.01) continue;
+    dust.fillStyle=`rgba(220,230,255,${a})`;
+    dust.beginPath(); dust.arc(x,y,1.1+1.7*m.z,0,6.283); dust.fill();
+  }
+
+  // ---- text scenes ----
+  words($('#h1'),T.h1,.17,T.h1out);
+  words($('#h2'),T.h2,.16,T.h2out);
+  words($('#h3'),T.h3,.12,T.h3out,.3);
+
+  // cards kicker
+  { const k=outCubic((t-T.kicker)/.5), o=Math.min(k,1-outCubic((t-T.kickerOut)/.4));
+    set($('#cardsKicker'),o,0,(1-k)*-16); }
+
+  // cards
+  cardEls.forEach((el,i)=>{
+    const st=T.cards[i], nx=(i<5?T.cards[i+1]:12.3);
+    const kIn=(t-st)/.5, out=outCubic((t-nx+.08)/.32);
+    const vis=t>=st-.02 && out<1;
+    if(!vis){ el.style.opacity=0; return; }
+    const chip=el.querySelector('.chip'), h2=el.querySelector('h2'), p=el.querySelector('p');
+    set(el,1,0,0,1,0);
+    el.style.opacity=1-out;
+    // chip pops with back-ease, text rises just after
+    set(chip, 1, 0, (1-outBack(kIn))*20 - out*18, lerp(.8,1,outBack(kIn))*(1-.06*out), out*6);
+    const kt=outCubic((t-st-.14)/.5);
+    set(h2, Math.min(kt,1-out), 0, (1-kt)*28 - out*14, 1, (1-kt)*6);
+    const kp=outCubic((t-st-.26)/.5);
+    set(p, Math.min(kp,1-out)*.95, 0, (1-kp)*20 - out*10);
+  });
+  // dots
+  const cardsActive = t>=T.cards[0]-.1 && t<12.5;
+  dotsRow.style.opacity = cardsActive ? (1-outCubic((t-12.2)/.3)) * outCubic((t-T.cards[0])/.4) : 0;
+  let activeCard=-1; T.cards.forEach((s,i)=>{ if(t>=s-.05) activeCard=i; });
+  dots.forEach((d,i)=>{ const on=i===activeCard; d.style.background=on?'#6C8AFF':'#2A386E'; d.style.transform=`scale(${on?1.25:1})`; });
+
+  // differentiator
+  { const k=outQuint((t-T.diff)/.55), o=Math.min(k,1-outCubic((t-T.diffOut)/.4));
+    set($('#diff'),o,0,(1-k)*30,lerp(1.04,1,k),(1-k)*8); }
+
+  // belief
+  { const o=1-outCubic((t-T.beliefOut)/.4);
+    const kk=outCubic((t-T.belief)/.5);
+    set($('#belief_k'), Math.min(kk,o), 0,(1-kk)*-14);
+    $('#belief').querySelectorAll('.word').forEach((w,i)=>{
+      const k=outCubic((now-(T.belief+.25)-i*.14)/.55);
+      set(w,Math.min(k,o),0,(1-k)*40,lerp(1.03,1,k),(1-k)*9);
+    });
+    // base opacity of container for safety
+    $('#belief').style.opacity=1;
+  }
+
+  // ---- logo sting (reusable) ----
+  renderSting(t, T.reveal);
+
+  // flash + fade
+  const r=t-REVEAL;
+  $('#flash').style.opacity = r>=0 ? .9*Math.exp(-r*5) : 0;
+  $('#fade').style.opacity = outCubic((t-18.9)/1.1) + (1-outCubic(t/.5));
+};
+
+// Reusable logo sting: light hits the mark, ring draws, wordmark assembles,
+// tagline tracks in, CTA fades up. Consistent for this and future videos.
+function renderSting(t, t0){
+  const sting=$('#sting'); const r=t-t0;
+  if (r < -0.02){ sting.style.opacity=0; return; }
+  sting.style.opacity=1;
+  const markWrap=$('#markWrap'), ring=$('#markRing'), wm=$('#wm'), tag=$('#tag'), cta=$('#cta'), div=$('#divider'), lock=$('#lockup');
+  // mark: scales up with back-ease, brightness sweeps in
+  const km=outBack(r/.7);
+  set(markWrap, outCubic(r/.5), 0, (1-km)*30, lerp(.72,1,km), (1-outCubic(r/.5))*10);
+  markWrap.style.boxShadow=`0 0 ${90*outCubic(r/.6)}px ${18*outCubic(r/.6)}px rgba(108,138,255,${.45*outCubic(r/.6)})`;
+  // ring draws (rotate+scale) then settles
+  const kr=outCubic((r-.25)/.7);
+  ring.style.opacity=kr*(1-outCubic((r-1.4)/1.5)*.4);
+  ring.style.transform=`scale(${lerp(.5,1,outBack((r-.25)/.8))}) rotate(${lerp(-40,0,outExpo((r-.25)/1.0))}deg)`;
+  // divider
+  const kd=outCubic((r-.35)/.5); div.style.opacity=kd; div.style.transform=`scaleY(${kd})`;
+  // wordmark assembles
+  const kw=outQuint((r-.4)/.8);
+  set(wm, kw, (1-kw)*-44, 0, 1, (1-kw)*12);
+  // tagline tracks in
+  const kt=outCubic((t-T.tag)/.8);
+  set(tag, kt, (1-kt)*-24, 0);
+  tag.style.letterSpacing=lerp(.9,.5,kt)+'em';
+  // CTA
+  const kc=outCubic((t-T.cta)/.8); set(cta, kc*.95, 0,(1-kc)*16);
+  // gentle push-in on the whole lockup
+  lock.style.transform=`translate(-50%,-50%) scale(${1+.028*clamp(r/6)})`;
+}
+
+window.ready = document.fonts.ready.then(()=>new Promise(res=>{
+  const img=$('#markWrap img'); img.complete?res():img.onload=res;
+})).then(()=>{ window.renderAt(0); return true; });
+
+if(!/render/.test(location.hash)){
+  window.ready.then(()=>{ const t0=performance.now();
+    const tick=()=>{ window.renderAt(((performance.now()-t0)/1000)%T.end); requestAnimationFrame(tick); }; tick(); });
+}
+</script>
+</body>
+</html>
