@@ -24,6 +24,7 @@ export interface Post {
   meta_description: string | null;
   og_image: string | null;
   reading_minutes: number;
+  reactions: number;
   published_at: string | null;
   created_at: string;
   updated_at: string;

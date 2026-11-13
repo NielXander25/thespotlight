@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { PostCard } from "@/components/blog/PostCard";
+import { ArticleActions } from "@/components/blog/ArticleActions";
 import {
   getPublishedBySlug,
   relatedPosts,
@@ -168,6 +169,10 @@ export default async function ArticlePage({ params }: { params: { slug: string }
               </div>
             </div>
           )}
+
+          <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6">
+            <ArticleActions slug={post.slug} initialCount={post.reactions ?? 0} url={url} title={post.title} />
+          </div>
 
           <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
             <div className="rounded-2xl bg-stage p-7 text-beam sm:p-9">
