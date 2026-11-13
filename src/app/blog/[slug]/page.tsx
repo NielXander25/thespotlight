@@ -185,7 +185,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           </div>
         </article>
 
-        {related.length > 0 && (
+        {related.length >= 3 && (
           <section className="border-t border-rule">
             <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
               <h2 className="font-serif text-2xl font-bold">More stories</h2>

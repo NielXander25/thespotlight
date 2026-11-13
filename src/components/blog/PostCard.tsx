@@ -37,16 +37,13 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
           {cover(true)}
         </div>
         <div>
-          <span className="inline-block rounded-full bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-            Latest story
-          </span>
-          <h2 className="mt-4 font-serif text-3xl font-black leading-[1.06] tracking-tight text-ink sm:text-4xl group-hover:text-brand">
+          {meta}
+          <h2 className="mt-3 font-serif text-3xl font-black leading-[1.06] tracking-tight text-ink sm:text-4xl group-hover:text-brand">
             {post.title}
           </h2>
           {post.excerpt && (
             <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-ink/70">{post.excerpt}</p>
           )}
-          <div className="mt-5">{meta}</div>
           <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
             Read the story
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
