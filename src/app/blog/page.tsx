@@ -8,7 +8,7 @@ import { listPublished, SITE_URL, type Post } from "@/lib/blog";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Stories — The Spotlight",
+  title: "Stories",
   description:
     "Stories worth seeing from AFIT: remarkable people, projects, ideas and journeys, discovered and told by The Spotlight.",
   alternates: { canonical: `${SITE_URL}/blog` },

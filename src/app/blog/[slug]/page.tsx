@@ -20,7 +20,7 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const post = await getPublishedBySlug(params.slug).catch(() => null);
-  if (!post) return { title: "Story not found — The Spotlight" };
+  if (!post) return { title: "Story not found" };
 
   const url = `${SITE_URL}/blog/${post.slug}`;
   const title = post.meta_title || post.title;
@@ -29,7 +29,7 @@ export async function generateMetadata({
   const image = post.og_image || post.cover_image || "/brand/logo-mark.png";
 
   return {
-    title: `${title} — The Spotlight`,
+    title,
     description,
     alternates: { canonical: url },
     authors: [{ name: post.author }],
