@@ -40,6 +40,7 @@ export function SiteHeader() {
       {/* Section nav */}
       <nav aria-label="Sections" className="border-y border-line bg-surface/40">
         <ul className="mx-auto flex max-w-6xl gap-6 overflow-x-auto px-4 py-3 text-[13px] font-medium text-mist sm:px-6">
+          <li className="shrink-0"><Link href="/blog" className="font-semibold text-beam hover:text-brand-light">Stories</Link></li>
           {DESKS.map((desk) => (
             <li key={desk.slug} className="shrink-0">
               <a href={`/#${desk.slug}`} className="hover:text-beam">

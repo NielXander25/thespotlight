@@ -25,6 +25,9 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    (process.env.NEXT_PUBLIC_SITE_URL || "https://thespotlightt.vercel.app").replace(/\/$/, "")
+  ),
   title: {
     default: "The Spotlight — Stories Worth Seeing",
     template: "%s · The Spotlight",
